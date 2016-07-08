@@ -49,7 +49,7 @@ function Transaction (mongoose) {
 	  			transactsDeffered.push(transact.call());
 	  		});
 	  		$.when.apply($, transactsDeffered).done(function(){
-	  			results = Array.prototype.slice.call(arguments);
+	  			results = Array.prototype.slice.call(arguments, 2);
 	  			var errs = [], successDocData = [], docs = [];
 	  			results.forEach(function(result){
 	  				if (!result)
