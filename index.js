@@ -4,6 +4,7 @@ function Transaction (mongoose) {
 
 	var transacts = [];
 	var updateOrRemoveObjects = [];
+	var successDocData = [];
 
 	this.insert = function(collectionName, data){
 		var  Model = mongoose.model(collectionName);
@@ -55,7 +56,7 @@ function Transaction (mongoose) {
 			}
 		})
 		.then(function(results){
-			var errs = [], successDocData = [], docs = [];
+			var errs = [], docs = [];
 
 			results.forEach(function(result){
 				if (result.isRejected()){
@@ -71,11 +72,16 @@ function Transaction (mongoose) {
 					successDocData.forEach(function(docData){
 						rollbacksDeffered.push(rollback(docData));
 					});
+					//everything has been rolled back, empty previous success
+					succesDocData = [];
 					return Promise.all(rollbacksDeffered)
 				} else {
 					return Promise.reject(errs);
 				}
 			}
+			//in case we want to run more steps of this transaction, empty tasks and keep successes
+			transacts = [];
+			updateOrRemoveObjects = [];
 			return Promise.resolve(docs);
 		})
 	};
