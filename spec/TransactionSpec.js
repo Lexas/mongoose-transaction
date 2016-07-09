@@ -48,7 +48,7 @@ describe("Transaction", function() {
       expect(doc).not.toBe(null);
       expect(doc.userId).toEqual("someuser1");
       var transaction = new Transaction();
-      transaction.update('User', doc._id, {userId:'someuser2' , emailId:'test email2'});
+      transaction.update('User', doc._id, {userId:'someuser2', emailId:'test email2'});
 	  updatedDoc = doc;
       return transaction.run();
 	})
