@@ -1,9 +1,7 @@
-## mongoose-transaction
-A node module for transaction-like db writes
+## lx-mongoose-transaction
 
-[![Build Status](https://travis-ci.org/anand-seeenivasagam/mongoose-transaction.svg?branch=master)](https://travis-ci.org/anand-seeenivasagam/mongoose-transaction)
-[![NPM Version](http://img.shields.io/npm/v/mongoose-transaction.svg?style=flat)](https://www.npmjs.org/package/mongoose-transaction)
-[![NPM Downloads](https://img.shields.io/npm/dm/mongoose-transaction.svg?style=flat)](https://www.npmjs.org/package/mongoose-transaction)
+A for ok mongoose-transaction which supports Promises and further runs of the same transaction.
+A node module for transaction-like db writes
 
 mongoose-transaction handles insert, update and remove.
 
@@ -20,7 +18,8 @@ var transaction = new Transaction();
 transaction.insert('User', {userId:'someuser1' , emailId:'test email1'});
 transaction.update('User', id, {userId:'someuser2' , emailId:'test email2'});
 transaction.remove('User', id2);
-transaction.run(function(err, docs){
+transaction.run()
+.then(function(docs){
   // your code here
 });
 ```

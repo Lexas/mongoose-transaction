@@ -75,6 +75,9 @@ function Transaction (mongoose) {
 					//everything has been rolled back, empty previous success
 					succesDocData = [];
 					return Promise.all(rollbacksDeffered)
+						.then(function(){
+							return Promise.reject(errs)
+						});
 				} else {
 					return Promise.reject(errs);
 				}
@@ -131,7 +134,11 @@ function Transaction (mongoose) {
 			var oldDocData = JSON.parse(JSON.stringify(docData.oldDoc));
 			docData.doc = docData.oldDoc;
 			for (var key in docData.data) {
-				docData.doc[key] = docData.data[key];
+				if(key[0] === '$'){
+					docData.doc[key.slice(1)](docData.data[key]);
+				} else {
+					docData.doc[key] = docData.data[key];
+				}
 			}
 			return docData.doc.save()
 			.then(function(doc){

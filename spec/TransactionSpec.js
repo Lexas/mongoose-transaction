@@ -38,7 +38,8 @@ describe("Transaction", function() {
 	.then(function(docs){
           expect(docs).toEqual(null);
           done();
-	});
+	})
+	.catch(done);
   });
 
   it("should update when there is no fails", function(done) {
@@ -77,7 +78,8 @@ describe("Transaction", function() {
 	.then(function(docs){
           expect(docs.userId).toEqual("someuser1");
           done();
-    });
+    })
+	.catch(done);
   });
 
   it("should rollback remove when one insert fails", function(done) {
@@ -96,7 +98,8 @@ describe("Transaction", function() {
 	.then(function(docs){
           expect(docs.userId).toEqual("someuser1");
           done();
-    });
+    })
+	.catch(done);
   });
 
 });
