@@ -1,5 +1,4 @@
-var $ = require('jquery-deferred');
-
+var Promise = require('bluebird');
 
 function Transaction (mongoose) {
 
@@ -33,14 +32,14 @@ function Transaction (mongoose) {
 		// storeOldDoc(objectId, transact);
 	};
 
-	this.run = function(callback){
+	this.run = function(a){
 		var updateOrRemoveDeferredArray = [];
 		updateOrRemoveObjects.forEach(function(docData){
 			updateOrRemoveDeferredArray.push(getTask(docData));
 		});
-
-		$.when.apply($, updateOrRemoveDeferredArray).done(function(){
-			var tasks = Array.prototype.slice.call(arguments);
+		
+		return Promise.all(updateOrRemoveDeferredArray)
+		.then(function(tasks){
 			if(tasks && tasks.length > 0)
 				transacts = transacts.concat(tasks);
 
@@ -48,141 +47,116 @@ function Transaction (mongoose) {
 	  		transacts.forEach(function(transact){
 	  			transactsDeffered.push(transact.call());
 	  		});
-	  		$.when.apply($, transactsDeffered).done(function(){
-	  			results = Array.prototype.slice.call(arguments, 2);
-	  			var errs = [], successDocData = [], docs = [];
-	  			results.forEach(function(result){
-	  				if (!result)
-	  					return;
-	  				if (result[0]) errs.push(result[0]);
-	  				if (result[1]) successDocData.push(result[1]);
-	  				if (result[2]) docs.push(result[2]);
-	  			});
-	  			if(errs.length !== 0){
-	  				var rollbacksDeffered = [];
-	  				if (successDocData.length !== 0){
-				  		successDocData.forEach(function(docData){
-				  			rollbacksDeffered.push(rollback(docData));
-				  		});
-				  		$.when.apply($, rollbacksDeffered).done(function(docs){
-				  			callback(docs);
-				  		});
-				  	} else {
-				  		callback(errs, null);
-				  	}
-	  			} else {
-	  				callback(null, docs);
-	  			}
-	  		});
-		}).fail(function(err){
-			callback(err);
-		});
+
+			if (transactsDeffered.length > 0){
+				return Promise.all(transactsDeffered);
+			} else {
+				return Promise.resolve();
+			}
+		})
+		.then(function(results){
+			var errs = [], successDocData = [], docs = [];
+
+			results.forEach(function(result){
+				if (result.isRejected()){
+					errs.push(result.reason());
+				} else if(result.isFulfilled()){
+					successDocData.push(result.value());
+					if (result.value().doc) docs.push(result.value().doc);
+				}
+			});
+			if(errs.length > 0){
+				var rollbacksDeffered = [];
+				if (successDocData.length !== 0){
+					successDocData.forEach(function(docData){
+						rollbacksDeffered.push(rollback(docData));
+					});
+					return Promise.all(rollbacksDeffered)
+				} else {
+					return Promise.reject(errs);
+				}
+			}
+			return Promise.resolve(docs);
+		})
 	};
 
 	function getTask (docData) {
-		var deferred = $.Deferred();
-		docData.Model.findById(docData.objectId, function(err, oldDoc){
-			if(err)
-				deferred.reject(err);
-			else{
-				var task;
-				docData.oldDoc = oldDoc;
-				if (docData.type === 'update') {
-					task = constructUpdateTask(docData);
-				} else if (docData.type === 'remove') {
-					task = constructRemoveTask(docData);
-				}
-				deferred.resolve(task);
+		return docData.Model.findById(docData.objectId)
+		.then(function(oldDoc){
+			var task;
+			docData.oldDoc = oldDoc;
+			if (docData.type === 'update') {
+				task = constructUpdateTask(docData);
+			} else if (docData.type === 'remove') {
+				task = constructRemoveTask(docData);
 			}
+			return task;
 		});
-		return deferred.promise();
 	}
 
 	function rollback (docData) {
-		var deferred = $.Deferred();
-		if (!docData || !docData.doc && !docData.oldDoc) { deferred.resolve(); }
+		if (!docData || !docData.doc && !docData.oldDoc) { Promise.resolve(); }
 		else {
 			if(docData.type === 'insert')
 				docData.doc.remove(function (err, doc) {
 					if(err)
-						deferred.reject(err);
+						Promise.reject(err);
 					else
-						deferred.resolve();
+						Promise.resolve();
 				});
 			else if (docData.type === 'update') {
 				for (var key in docData.oldDoc) {
 					docData.doc[key] = docData.oldDoc[key];
 				}
-				docData.doc.save(function (err, doc){
-					if(err)
-						deferred.reject(err);
-					else
-						deferred.resolve();
-				});
+				return docData.doc.save()
+				.return();
 			}
 			else if (docData.type === 'remove'){
 				var oldDocData = JSON.parse(JSON.stringify(docData.oldDoc));
 				var oldDoc = new docData.Model(oldDocData);
-				oldDoc.save(function (err, doc){
-					if(err)
-						deferred.reject(err);
-					else
-						deferred.resolve();
-				});
+				return oldDoc.save()
+				.return();
 			}
 		}
-		return deferred.promise();
 	}
 
 	function constructUpdateTask (docData) {
 		return function () {
-			var deferred = $.Deferred();
 			var oldDocData = JSON.parse(JSON.stringify(docData.oldDoc));
 			docData.doc = docData.oldDoc;
 			for (var key in docData.data) {
 				docData.doc[key] = docData.data[key];
 			}
-			docData.doc.save(function(err, doc){
-				if(err)
-					deferred.resolve(err, null, null);
-				else {
-					docData.oldDoc = oldDocData;
-					deferred.resolve(null, docData, doc);
-				}
-			});
-			return deferred.promise();
+			return docData.doc.save()
+			.then(function(doc){
+				docData.oldDoc = oldDocData;
+				docData.doc = doc;
+				return docData;
+			})
+			.reflect();
 		};
 	}
 
 	function constructRemoveTask (docData) {
 		return function () {
-			var deferred = $.Deferred();
-			docData.oldDoc.remove(function(err, doc){
-				if(err){
-					deferred.resolve(err, null, null);
-				}
-				else {
-					deferred.resolve(null, docData, doc);
-				}
-			});
-			return deferred.promise();
+			return docData.oldDoc.remove()
+			.then(function(doc){
+				docData.doc = doc;
+				return docData;
+			})
+			.reflect();
 		};
 	}
 
 	function constructInsertTask (docData) {
 		return function () {
-			var deferred = $.Deferred();
 			var model = new docData.Model(docData.data);
-			model.save(function(err, doc){
-				if(err){
-					deferred.resolve(err, null, null);
-				}
-				else {
-					docData.doc = doc;
-					deferred.resolve(null, docData, doc);
-				}
-			});
-			return deferred.promise();
+			return model.save()
+			.then(function(doc){
+				docData.doc = doc;
+				return docData;
+			})
+			.reflect()
 		};
 	}
 }

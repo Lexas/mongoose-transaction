@@ -1,5 +1,5 @@
 {
-  "name": "mongoose-transaction",
+  "name": "lx-mongoose-transaction",
   "version": "0.0.4",
   "description": "A small library to provide an transaction-like process for mongoose",
   "main": "index.js",
@@ -8,20 +8,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/anand-seeenivasagam/mongoose-transaction.git"
+    "url": "https://github.com/lexas/mongoose-transaction.git"
   },
   "keywords": [
     "mongoose",
     "transaction",
     "mongodb"
   ],
-  "author": "Anand S <anand.seenivasan@gmail.com>",
+  "author": "Lexas <dislexas@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/anand-seeenivasagam/mongoose-transaction/issues"
+    "url": "https://github.com/lexas/mongoose-transaction/issues"
   },
   "dependencies": {
-    "jquery-deferred": "^0.3.0"
+    "bluebird": "^3.4.1"
   },
   "devDependencies": {
     "jasmine": "^2.3.1",
