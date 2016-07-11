@@ -15,6 +15,7 @@ var UserSchema = new Schema({
 		unique: true,
         required: true, 
     },
+	arr: Array, 
 	created: {
 		type: Number, 
 		default: new Date().getTime()

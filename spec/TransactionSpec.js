@@ -63,12 +63,12 @@ describe("Transaction", function() {
   });
 
   it("should rollback update when one insert fails", function(done) {
-    mongoose.model('User')({userId:'someuser1' , emailId:'test email1'}).save()
+    mongoose.model('User')({userId:'someuser1' , emailId:'test email1', arr: []}).save()
 	.then(function(doc){
       expect(doc).not.toBe(null);
       expect(doc.userId).toEqual("someuser1");
       var transaction = new Transaction();
-      transaction.update('User', doc._id, {userId:'someuser2' , emailId:'test email2'});
+      transaction.update('User', doc._id, {userId:'someuser2' , emailId:'test email2', $push:{arr:'a'}});
       transaction.insert('User', {});
       return transaction.run();
 	})

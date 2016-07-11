@@ -107,12 +107,8 @@ function Transaction (mongoose) {
 		if (!docData || !docData.doc && !docData.oldDoc) { Promise.resolve(); }
 		else {
 			if(docData.type === 'insert')
-				docData.doc.remove(function (err, doc) {
-					if(err)
-						Promise.reject(err);
-					else
-						Promise.resolve();
-				});
+				return docData.doc.remove()
+				.return();
 			else if (docData.type === 'update') {
 				for (var key in docData.oldDoc) {
 					docData.doc[key] = docData.oldDoc[key];
@@ -134,11 +130,7 @@ function Transaction (mongoose) {
 			var oldDocData = JSON.parse(JSON.stringify(docData.oldDoc));
 			docData.doc = docData.oldDoc;
 			for (var key in docData.data) {
-				if(key[0] === '$'){
-					docData.doc[key.slice(1)](docData.data[key]);
-				} else {
-					docData.doc[key] = docData.data[key];
-				}
+				docData.doc[key] = docData.data[key];
 			}
 			return docData.doc.save()
 			.then(function(doc){
