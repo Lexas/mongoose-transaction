@@ -48,6 +48,9 @@ function Transaction (mongoose) {
 	  		transacts.forEach(function(transact){
 	  			transactsDeffered.push(transact.call());
 	  		});
+			
+			transacts = [];
+			updateOrRemoveObjects = [];
 
 			if (transactsDeffered.length > 0){
 				return Promise.all(transactsDeffered);
