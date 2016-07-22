@@ -1,6 +1,6 @@
 {
   "name": "lx-mongoose-transaction",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "A small library to provide an transaction-like process for mongoose",
   "main": "index.js",
   "scripts": {

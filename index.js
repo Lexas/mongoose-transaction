@@ -34,23 +34,25 @@ function Transaction (mongoose) {
 	};
 
 	this.run = function(a){
+	    var transactsBatch = transacts;
+	    transacts = [];
+	    var updateOrRemoveBatch = updateOrRemoveObjects;
+		updateOrRemoveObjects = [];
+
 		var updateOrRemoveDeferredArray = [];
-		updateOrRemoveObjects.forEach(function(docData){
+		updateOrRemoveBatch.forEach(function(docData){
 			updateOrRemoveDeferredArray.push(getTask(docData));
 		});
 		
 		return Promise.all(updateOrRemoveDeferredArray)
 		.then(function(tasks){
 			if(tasks && tasks.length > 0)
-				transacts = transacts.concat(tasks);
+				transactsBatch = transactsBatch.concat(tasks);
 
 	  		var transactsDeffered = [];
-	  		transacts.forEach(function(transact){
+	  		transactsBatch.forEach(function(transact){
 	  			transactsDeffered.push(transact.call());
 	  		});
-			
-			transacts = [];
-			updateOrRemoveObjects = [];
 
 			if (transactsDeffered.length > 0){
 				return Promise.all(transactsDeffered);
